@@ -132,6 +132,11 @@ When an IMB member leaves the chamber and later participates as a visiting parti
 - Reporting is therefore split:
   - IMB reports (points-relevant)
   - visiting participant reports (attendance-focused)
+- The chamber **cannot manually convert** a PTK-Member into a Visitor by adjusting an approved attendee.
+- Once approved, the attendee record is **frozen**; details cannot be edited.
+- If a PTK-Member has a name change, it is updated in IMB and reflected in IV because the `user_id` is the same.
+- The attendee **type** (PTK-Member vs Visitor) cannot be changed, even by chamber admins.
+- Open question to client: can a visiting participant's name be changed manually?
 
 This separation is intentional and explicit.
 
