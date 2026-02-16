@@ -60,19 +60,45 @@ This migration is treated as a **separate project**, with its own plan and risk 
 
 ---
 
-## 3. Roles & Terminology
+## 3. Legacy Migration: Hamburg-Centric Meta Keys
 
-### IMB Member
+While the change request focuses on moving the system forward, the existing system requires cleanup and migration. The codebase currently uses Hamburg-centric meta keys that should be updated to generic, chamber-agnostic keys.
+
+### 3.1 Scope
+- **System-wide**: All references to these keys across field creation, program logic, and database storage
+- **Codebase**: Update field creation and program logic
+- **Database**: Migrate existing `meta_key` values in post meta and related tables
+
+### 3.2 Key Mappings (Examples)
+
+| Current (Hamburg-centric) | Target (Generic) |
+|---------------------------|------------------|
+| `teil_ptkhh_yes`          | `teil_ptk_yes`   |
+| `teilnehmer_ptkhh`        | `teilnehmer_ptk` |
+
+*A full audit of all `ptkhh` / Hamburg-specific keys is required before migration.*
+
+### 3.3 Requirements
+- Identify all occurrences of Hamburg-centric keys in the codebase
+- Update field creation and any program logic that reads/writes these keys
+- Provide a database migration script to rename `meta_key` values
+- Migration should follow the same freeze/deploy/migrate/verify/unfreeze procedure as other system-wide changes
+
+---
+
+## 4. Roles & Terminology
+
+### 4.1 IMB Member
 - Has an IMB user account (`user_id`)
 - Eligible for automatic point calculation
 - Can become inactive (not deleted)
 
-### Visiting Participant (Non-IMB)
+### 4.2 Visiting Participant (Non-IMB)
 - No IMB user account
 - External participant (other chambers, Ärztekammer, etc.)
 - Attendance tracked, but no automatic IMB points
 
-### IV Participant Record
+### 4.3 IV Participant Record
 - Represents a concrete group membership
 - Status:
   - pending
@@ -80,12 +106,12 @@ This migration is treated as a **separate project**, with its own plan and risk 
   - inactive / archived
 - Approval is **per IV group**, not global
 
-### Group Coordinator (GK)
+### 4.4 Group Coordinator (GK)
 - Manages group composition
 - Submits participants
 - **Cannot modify participants after approval**
 
-### Chamber / Chamber Admin
+### 4.5 Chamber / Chamber Admin
 - Approves participants
 - Manages name changes for visiting participants
 - Can generate historical reports
@@ -93,9 +119,9 @@ This migration is treated as a **separate project**, with its own plan and risk 
 
 ---
 
-## 4. Participant Immutability & Name Changes
+## 5. Participant Immutability & Name Changes
 
-### 4.1 General Rule
+### 5.1 General Rule
 Once a participant is **approved**, **no changes** may be made by Group Coordinators.
 
 This applies to:
@@ -103,13 +129,13 @@ This applies to:
 - visiting participants
 - all participant data fields
 
-### 4.2 IMB Members
+### 5.2 IMB Members
 - Name changes are handled exclusively via the **IMB name-change workflow**.
 - Once approved:
   - the updated name is reflected everywhere (current and historical views).
 - Logs remain unchanged and record the original name at the time of each action.
 
-### 4.3 Visiting Participants
+### 5.3 Visiting Participants
 - Name changes may **only** be performed by:
   - chamber / chamber_admin users
 - Group Coordinators must relay change requests to the chamber.
@@ -123,7 +149,7 @@ This applies to:
 
 ---
 
-## 5. IMB → Non-IMB Transitions
+## 6. IMB → Non-IMB Transitions
 
 When an IMB member leaves the chamber and later participates as a visiting participant:
 
@@ -142,9 +168,9 @@ This separation is intentional and explicit.
 
 ---
 
-## 6. Intervision Points & Inactive Members
+## 7. Intervision Points & Inactive Members
 
-### 6.1 Core Rule
+### 7.1 Core Rule
 When a member becomes inactive:
 - previously earned Intervision points **do not disappear**
 - historical points remain:
@@ -154,10 +180,10 @@ When a member becomes inactive:
 
 This supports cases where former members request point statements for submission to a new chamber.
 
-### 6.2 Permissions
+### 7.2 Permissions
 - Only the **chamber** may generate point statements (PDFs) for **inactive members**.
 
-### 6.3 IV Meeting Points Check
+### 7.3 IV Meeting Points Check
 When an IV meeting is created, points are automatically generated for each PTK member and require chamber approval.
 
 - Add a check to ensure the member is **not** `user_status = inactive` before assigning points.
@@ -165,7 +191,9 @@ When an IV meeting is created, points are automatically generated for each PTK m
 
 ---
 
-## 7. IV Group Membership When IMB User Becomes Inactive
+## 8. IV Group Membership When IMB User Becomes Inactive
+
+### 8.1 Moving Forward
 
 When an IMB user is given an exit date and set as inactive in the system, the question arises how to handle this user's membership in IV groups.
 
@@ -173,21 +201,34 @@ When an IMB user is given an exit date and set as inactive in the system, the qu
 
 > This raises the question of how we should handle this going forward: When a PTK member receives an exit date and is set to inactive, should the system automatically remove this user from all IV groups? How do we communicate this to the group coordinators? Would it make sense to introduce a new status for IV group members (“inactive”) that informs the coordinator that the user must be removed and then re-added as a guest?
 
+### 8.2 Historical Cleanup: Existing Inactive Members in IV Groups
+
+There is a backlog of members who have since gone inactive. Currently they have either:
+
+- been manually changed to visitors (currently allowed by the chamber, but will be **locked** after this change), or
+- remain listed in IV groups as PTK members, with points assigned, etc.
+
+A utility job has been developed that exports all inactive members who belong to IV groups as a PTK member. The resulting CSV can be used to perform a cleanup.
+
+**Open question to PTK-HH (client):**
+
+Can we create a new approved visitor without going through the normal approval process? The visiting chamber they joined is unknown, but a column can be added to the CSV for manual update; this modified list would then drive the cleanup. This approach would allow all attended meetings **after** their exit date to be reassigned to the new visitor record, while keeping the legacy PTK attendance intact.
+
 ---
 
-## 8. Printing Attendance & Points for Visiting Participants
+## 9. Printing Attendance & Points for Visiting Participants
 
-### 8.1 Current State
+### 9.1 Current State
 - Group Coordinators can print reports for **active visiting participants** via the frontend.
 - Chambers can already print reports for **any IMB member** (active or inactive).
 
-### 8.2 Required Enhancement
+### 9.2 Required Enhancement
 - Add the ability for the **chamber** to generate:
   - attendance reports
   - points reports (where applicable)
   - for **any visiting participant** (active or inactive)
 
-### 8.3 Admin UI Placement
+### 9.3 Admin UI Placement
 - WordPress admin → Edit IV Group
 - Add a metabox that:
   - lists all visiting participants
@@ -199,7 +240,7 @@ When an IMB user is given an exit date and set as inactive in the system, the qu
 
 ---
 
-## 9. Open Privacy Question (Pending)
+## 10. Open Privacy Question (Pending)
 
 To reduce chamber workload, it has been proposed to also allow:
 
@@ -213,22 +254,22 @@ This is currently under review by the client with respect to **German privacy re
 
 ---
 
-## 10. IV Meetings UI – List & Pagination Rules
+## 11. IV Meetings UI – List & Pagination Rules
 
-### 10.1 IV Group Details → Meetings List
+### 11.1 IV Group Details → Meetings List
 - Paginated list
 - **10 meetings per page**
 - Only meetings from the **last 6 years**
 
 Pagination is believed to already exist in the GK view and must be verified.
 
-### 10.2 Meetings Older Than 6 Years
+### 11.2 Meetings Older Than 6 Years
 **Open question (client checking):**
 - Should meetings older than 6 years:
   - be hidden from the UI but retained in the system, or
   - be removed from the system entirely?
 
-### 10.3 Attendees View
+### 11.3 Attendees View
 - Same rules must apply:
   - paginated
   - 10 per page
@@ -237,7 +278,7 @@ Pagination is believed to already exist in the GK view and must be verified.
 
 ---
 
-## 11. Logs vs. Displayed Data
+## 12. Logs vs. Displayed Data
 
 - Logs are **immutable** and always reflect:
   - the state at the time of the action
@@ -250,20 +291,22 @@ Pagination is believed to already exist in the GK view and must be verified.
 
 ---
 
-## 12. Open Questions Summary
+## 13. Open Questions Summary
 
 1. May Group Coordinators print reports for **inactive visiting participants** (privacy)?
 2. Should IV meetings older than 6 years be **hidden** or **deleted**?
 3. Final confirmation that system-wide timestamp migration is handled as a **separate project** with its own rollout.
 4. When an IMB user becomes inactive (exit date set): should the system **automatically remove** them from IV groups, introduce an **„inaktiv" status** for group members, and how should this be communicated to Group Coordinators?
+5. **Historical cleanup**: For existing inactive members still in IV groups as PTK members: can we create approved visitors without the normal approval process, use a CSV (with manual chamber column) to drive cleanup, and reassign post-exit meetings to the new visitor while preserving legacy PTK attendance?
 
 ---
 
-## 13. Next Steps
+## 14. Next Steps
 
 1. Client confirmation of open questions
 2. Separate concept & plan for system-wide timestamp migration
-3. Implementation of IV- and UI-related changes on top of the new date model
-4. Production rollout following freeze/migrate/test/unfreeze procedure
+3. Full audit of Hamburg-centric meta keys (`ptkhh`, etc.) and migration plan
+4. Implementation of IV- and UI-related changes on top of the new date model
+5. Production rollout following freeze/migrate/test/unfreeze procedure (including meta key migration)
 
 ---
