@@ -157,6 +157,12 @@ This supports cases where former members request point statements for submission
 ### 6.2 Permissions
 - Only the **chamber** may generate point statements (PDFs) for **inactive members**.
 
+### 6.3 IV Meeting Points Check
+When an IV meeting is created, points are automatically generated for each PTK member and require chamber approval.
+
+- Add a check to ensure the member is **not** `user_status = inactive` before assigning points.
+- If a user is inactive but still assigned as a PTK-Member, log this in the IV meeting log.
+
 ---
 
 ## 7. Printing Attendance & Points for Visiting Participants
