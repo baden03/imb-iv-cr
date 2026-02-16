@@ -165,19 +165,29 @@ When an IV meeting is created, points are automatically generated for each PTK m
 
 ---
 
-## 7. Printing Attendance & Points for Visiting Participants
+## 7. IV Group Membership When IMB User Becomes Inactive
 
-### 7.1 Current State
+When an IMB user is given an exit date and set as inactive in the system, the question arises how to handle this user's membership in IV groups.
+
+**Open questions to PTK-HH (client), in German:**
+
+> This raises the question of how we should handle this going forward: When a PTK member receives an exit date and is set to inactive, should the system automatically remove this user from all IV groups? How do we communicate this to the group coordinators? Would it make sense to introduce a new status for IV group members (“inactive”) that informs the coordinator that the user must be removed and then re-added as a guest?
+
+---
+
+## 8. Printing Attendance & Points for Visiting Participants
+
+### 8.1 Current State
 - Group Coordinators can print reports for **active visiting participants** via the frontend.
 - Chambers can already print reports for **any IMB member** (active or inactive).
 
-### 7.2 Required Enhancement
+### 8.2 Required Enhancement
 - Add the ability for the **chamber** to generate:
   - attendance reports
   - points reports (where applicable)
   - for **any visiting participant** (active or inactive)
 
-### 7.3 Admin UI Placement
+### 8.3 Admin UI Placement
 - WordPress admin → Edit IV Group
 - Add a metabox that:
   - lists all visiting participants
@@ -189,7 +199,7 @@ When an IV meeting is created, points are automatically generated for each PTK m
 
 ---
 
-## 8. Open Privacy Question (Pending)
+## 9. Open Privacy Question (Pending)
 
 To reduce chamber workload, it has been proposed to also allow:
 
@@ -203,22 +213,22 @@ This is currently under review by the client with respect to **German privacy re
 
 ---
 
-## 9. IV Meetings UI – List & Pagination Rules
+## 10. IV Meetings UI – List & Pagination Rules
 
-### 9.1 IV Group Details → Meetings List
+### 10.1 IV Group Details → Meetings List
 - Paginated list
 - **10 meetings per page**
 - Only meetings from the **last 6 years**
 
 Pagination is believed to already exist in the GK view and must be verified.
 
-### 9.2 Meetings Older Than 6 Years
+### 10.2 Meetings Older Than 6 Years
 **Open question (client checking):**
 - Should meetings older than 6 years:
   - be hidden from the UI but retained in the system, or
   - be removed from the system entirely?
 
-### 9.3 Attendees View
+### 10.3 Attendees View
 - Same rules must apply:
   - paginated
   - 10 per page
@@ -227,7 +237,7 @@ Pagination is believed to already exist in the GK view and must be verified.
 
 ---
 
-## 10. Logs vs. Displayed Data
+## 11. Logs vs. Displayed Data
 
 - Logs are **immutable** and always reflect:
   - the state at the time of the action
@@ -240,15 +250,16 @@ Pagination is believed to already exist in the GK view and must be verified.
 
 ---
 
-## 11. Open Questions Summary
+## 12. Open Questions Summary
 
 1. May Group Coordinators print reports for **inactive visiting participants** (privacy)?
 2. Should IV meetings older than 6 years be **hidden** or **deleted**?
 3. Final confirmation that system-wide timestamp migration is handled as a **separate project** with its own rollout.
+4. When an IMB user becomes inactive (exit date set): should the system **automatically remove** them from IV groups, introduce an **„inaktiv" status** for group members, and how should this be communicated to Group Coordinators?
 
 ---
 
-## 12. Next Steps
+## 13. Next Steps
 
 1. Client confirmation of open questions
 2. Separate concept & plan for system-wide timestamp migration
