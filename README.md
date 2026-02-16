@@ -101,9 +101,10 @@ While the change request focuses on moving the system forward, the existing syst
 ### 4.3 IV Participant Record
 - Represents a concrete group membership
 - Status:
-  - pending
-  - approved
-  - inactive / archived
+  - `pending` — in Prüfung (in review)
+  - `approved` — Genehmigt
+  - `denied` — abgelehnt
+  - `archived` — Archiviert (inaktiv); used when the participant has left (e.g. IMB user became inactive) and the coordinator should remove them and re-add as guest if they return
 - Approval is **per IV group**, not global
 
 ### 4.4 Group Coordinator (GK)
@@ -162,7 +163,7 @@ When an IMB member leaves the chamber and later participates as a visiting parti
 - Once approved, the attendee record is **frozen**; details cannot be edited.
 - If a PTK-Member has a name change, it is updated in IMB and reflected in IV because the `user_id` is the same.
 - The attendee **type** (PTK-Member vs Visitor) cannot be changed, even by chamber admins.
-- Open question to client: can a visiting participant's name be changed manually?
+- Open question to PTK-HH (client): can a visiting participant's name be changed manually?
 
 This separation is intentional and explicit.
 
@@ -197,7 +198,7 @@ When an IV meeting is created, points are automatically generated for each PTK m
 
 When an IMB user is given an exit date and set as inactive in the system, the question arises how to handle this user's membership in IV groups.
 
-**Open questions to PTK-HH (client), in German:**
+**Open questions to PTK-HH (client):**
 
 > This raises the question of how we should handle this going forward: When a PTK member receives an exit date and is set to inactive, should the system automatically remove this user from all IV groups? How do we communicate this to the group coordinators? Would it make sense to introduce a new status for IV group members (“inactive”) that informs the coordinator that the user must be removed and then re-added as a guest?
 
