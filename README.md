@@ -89,12 +89,12 @@ While the change request focuses on moving the system forward, the existing syst
 ## 4. Roles & Terminology
 
 ### 4.1 IMB Member
-- Has an IMB user account (`user_id`)
+- Has an _active_ IMB user account (`user_id`)
 - Eligible for automatic point calculation
 - Can become inactive (not deleted)
 
 ### 4.2 Visiting Participant (Non-IMB)
-- No IMB user account
+- No _active_ IMB user account
 - External participant (other chambers, Ärztekammer, etc.)
 - Attendance tracked, but no automatic IMB points
 
@@ -102,9 +102,9 @@ While the change request focuses on moving the system forward, the existing syst
 - Represents a concrete group membership
 - Status:
   - `pending` — in Prüfung (in review)
-  - `approved` — Genehmigt
-  - `denied` — abgelehnt
-  - `archived` — Archiviert (inaktiv); used when the participant has left (e.g. IMB user became inactive) and the coordinator should remove them and re-add as guest if they return
+  - `approved` — Approved
+  - `denied` — Denied
+  - `archived` — (needs to be added) Archived (inactive); used when the participant has left (e.g. IMB user became inactive) and the coordinator should remove them and re-add as guest if they return
 - Approval is **per IV group**, not global
 
 ### 4.4 Group Coordinator (GK)
