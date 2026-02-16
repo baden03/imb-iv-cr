@@ -298,7 +298,7 @@ Pagination is believed to already exist in the GK view and must be verified.
 2. Should IV meetings older than 6 years be **hidden** or **deleted**?
 3. Final confirmation that system-wide timestamp migration is handled as a **separate project** with its own rollout.
 4. When an IMB user becomes inactive (exit date set): should the system **automatically remove** them from IV groups, or introduce an **„inaktiv" status** for group members? How should this change and any required action be communicated to Group Coordinators?
-5. **Historical cleanup**: For existing inactive members still in IV groups as PTK members: can we create approved visitors without the normal approval process, use a CSV (with manual chamber column) to drive cleanup, and reassign post-exit meetings to the new visitor while preserving legacy PTK attendance?
+5. **Historical cleanup**: For existing inactive members still in IV groups as PTK members: can we create approved visitors without the normal approval process? This would use a CSV of existing inacive users that belong to IV groups as PTK members (with a manually filled out column for chamber) to drive cleanup, and reassign post-exit meetings to the new visitor while preserving legacy PTK attendance.
 
 ---
 
