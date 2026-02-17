@@ -123,12 +123,12 @@ Während sich die Änderungsanfrage auf die Weiterentwicklung des Systems konzen
 ## 5. Teilnehmer-Unveränderbarkeit & Namensänderungen
 
 ### 5.1 Allgemeine Regel
-Sobald ein Teilnehmer **genehmigt** ist, dürfen Gruppenkoordinatoren **keine Änderungen** mehr vornehmen.
+Sobald ein Teilnehmer **genehmigt** ist, dürfen Gruppenkoordinatoren **keine Änderungen** mehr vornehmen — mit einer Ausnahme: Das **Kammer**-Feld (Zielkammer) darf von Kammer-Admins und Gruppenkoordinatoren aktualisiert werden, wenn es leer gelassen wurde (z. B. nach automatischer PTK→Gast-Umwandlung).
 
 Dies gilt für:
 - IMB-Mitglieder
 - Gast-Teilnehmer
-- alle Teilnehmerdatenfelder
+- alle übrigen Teilnehmerdatenfelder
 
 ### 5.2 IMB-Mitglieder
 - Namensänderungen werden ausschließlich über den **IMB-Namensänderungs-Workflow** abgewickelt.
@@ -160,7 +160,7 @@ Wenn ein IMB-Mitglied die Kammer verlässt und später als Gast-Teilnehmer mitma
   - IMB-Berichte (punkterelevant)
   - Gast-Teilnehmer-Berichte (teilnahmeorientiert)
 - Die Kammer **kann nicht manuell** ein PTK-Mitglied durch Anpassung eines genehmigten Teilnehmers in einen Gast umwandeln.
-- Nach Genehmigung ist der Teilnehmerdatensatz **eingefroren**; Details können nicht bearbeitet werden.
+- Nach Genehmigung ist der Teilnehmerdatensatz **eingefroren**; Details können nicht bearbeitet werden (außer dem Kammer-Feld, wenn es nach automatischer PTK→Gast-Umwandlung leer gelassen wurde — siehe §8.1).
 - Bei Namensänderung eines PTK-Mitglieds wird dies in IMB aktualisiert und erscheint in IV, da die `user_id` dieselbe ist.
 - Der Teilnehmer-**typ** (PTK-Mitglied vs. Gast) kann nicht geändert werden, auch nicht durch Kammer-Admins.
 - Offene Frage an PTK-HH (Auftraggeber): Darf der Name eines Gast-Teilnehmers manuell geändert werden?
@@ -194,13 +194,25 @@ Bei der Erstellung einer IV-Sitzung werden automatisch Punkte für jedes PTK-Mit
 
 ## 8. IV-Gruppenmitgliedschaft Wenn IMB-Nutzer Inaktiv Wird
 
-### 8.1 Für die Zukunft
+### 8.1 Automatische Verarbeitung (Vereinbart)
 
-Wenn ein IMB-Nutzer ein Austrittsdatum erhält und im System auf inaktiv gesetzt wird, stellt sich die Frage, wie mit dessen IV-Gruppenmitgliedschaft umgegangen werden soll.
+Wenn ein PTK-Nutzer mit Austrittsdatum (Pflichtangabe) als inaktiv markiert wird, führt das System **automatisch** Folgendes aus:
 
-**Offene Fragen an PTK-HH (Auftraggeber):**
+1. **`valid_to` aktualisieren** in der Tabelle `group_membership` für alle IV-Gruppen, denen der Nutzer angehört — setzen auf das Austrittsdatum (Timestamp).
+2. **Neuen Eintrag erstellen** in der Tabelle `group_membership` für jede `group_id`, der der inaktive Nutzer angehört: `valid_from` = heute (Timestamp), `valid_to` = 20 Jahre in der Zukunft (oder der verwendete Timestamp für „weit in der Zukunft“).
+3. **Nutzer entfernen** (nicht als inaktiv markieren) vollständig aus allen `group_member_details` aller IV-Gruppen.
+4. **Neuen Gast-Teilnehmer erstellen** in den `group_member_details` jeder Gruppe mit:
+   - `teilnehmer_name` — vom ehemaligen PTK-Mitglied
+   - `teilnehmer_ptkhh` (wird zu `teilnehmer_ptk` umbenannt) — nein (Gast, kein PTK-Mitglied)
+   - `teil_kammer_other` — **leer** (vom Gruppenkoordinator auszufüllen)
+   - `teilnehmer_type` — vom alten PTK-Mitglied übernommen
+   - `teil_appurkunde` — leer (bereits als PTK-Mitglied genehmigt)
+   - `status` — approved
 
-> Dies wirft die Frage auf, wie wir damit künftig umgehen sollen: Wenn ein PTK-Mitglied ein Austrittsdatum erhält und auf inaktiv gesetzt wird, sollte das System diesen Nutzer dann automatisch aus allen IV-Gruppen entfernen? Wie kommunizieren wir das an die Gruppenkoordinatoren? Wäre es sinnvoll, einen neuen Status für IV-Gruppenmitglieder („inaktiv") einzuführen, der den Koordinator informiert, dass der Nutzer entfernt und anschließend als Gast neu hinzugefügt werden muss?
+5. **Postmeta aktualisieren** für alle `intervision_meeting`-Beiträge, die **nach** dem Austrittsdatum des Nutzers stattgefunden haben, wo `meta_key` = `'attended'` und `meta_value` = die inaktive `user_id`: die `user_id` durch Vor- und Nachname ersetzen (als neuer `member_key` in `group_membership`).
+6. **Punkte löschen**, die dem Nutzer zugewiesen wurden und **nach** dem Austrittsdatum erstellt wurden.
+
+Das **Kammer**-Feld (`teil_kammer_other`) ist das **einzige** Feld, das von Kammer-Admins und Gruppenkoordinatoren für einen genehmigten Teilnehmer geändert werden darf, aber nur wenn es leer ist. Alle übrigen genehmigten Teilnehmerfelder bleiben eingefroren.
 
 ### 8.2 Historische Bereinigung: Bestehende Inaktive Mitglieder in IV-Gruppen
 
@@ -213,7 +225,15 @@ Es wurde ein Hilfsprogramm entwickelt, das alle inaktiven Mitglieder exportiert,
 
 **Offene Frage an PTK-HH (Auftraggeber):**
 
-Können wir einen neuen genehmigten Gast ohne den üblichen Genehmigungsprozess anlegen? Die Zielkammer, der sie beigetreten sind, ist unbekannt, aber es kann eine Spalte in der CSV für manuelle Aktualisierung ergänzt werden; diese angepasste Liste würde dann die Bereinigung steuern. Dieser Ansatz würde ermöglichen, alle besuchten Sitzungen **nach** ihrem Austritt dem neuen Gast-Datensatz zuzuordnen, während die bisherige PTK-Teilnahme erhalten bleibt.
+Bei der Bereinigung ist die Zielkammer, der sie beigetreten sind, unbekannt; es kann jedoch eine Spalte in der CSV für manuelle Aktualisierung ergänzt werden. Diese angepasste Liste würde dann die Bereinigung steuern. Dieser Ansatz würde ermöglichen, alle besuchten Sitzungen **nach** ihrem Austritt dem neuen Gast-Datensatz zuzuordnen, während die bisherige PTK-Teilnahme erhalten bleibt.
+
+### 8.3 PTK-Mitglied Als Gruppenkoordinator Tretend
+
+**Offene Frage an PTK-HH (Auftraggeber):**
+
+Was geschieht, wenn das austretende PTK-Mitglied ein Gruppenkoordinator ist? Die Möglichkeit, einen GK als inaktiv zu markieren, soll nur erlaubt sein, wenn er bereits seine GK-Rolle an ein anderes Mitglied übertragen hat.
+
+**Vorgeschlagene Implementierung (vorläufig):** Vor dem Erlauben, den Nutzer als inaktiv zu markieren, immer prüfen, ob der Nutzer offene IV-Gruppen besitzt. Wenn der Nutzer offene IV-Gruppen besitzt, die Aktion blockieren, bis das Eigentum übertragen wurde.
 
 ---
 
@@ -297,8 +317,9 @@ Die Paginierung soll in der GK-Ansicht bereits existieren und muss verifiziert w
 1. Dürfen Gruppenkoordinatoren Berichte für **inaktive Gast-Teilnehmer** drucken (Datenschutz)?
 2. Sollen IV-Sitzungen älter als 6 Jahre **ausgeblendet** oder **gelöscht** werden?
 3. Endgültige Bestätigung, dass die systemweite Timestamp-Migration als **eigenständiges Projekt** mit eigenem Rollout behandelt wird.
-4. Wenn ein IMB-Nutzer inaktiv wird (Austrittsdatum gesetzt): Soll das System diesen **automatisch** aus IV-Gruppen entfernen oder einen **„inaktiv"**-Status für Gruppenmitglieder einführen? Wie soll diese Änderung und erforderliche Maßnahmen den Gruppenkoordinatoren mitgeteilt werden?
-5. **Historische Bereinigung**: Für bestehende inaktive Mitglieder, die weiterhin als PTK-Mitglieder in IV-Gruppen gelistet sind: Können wir genehmigte Gäste ohne den üblichen Genehmigungsprozess anlegen? Hierfür würde eine CSV bestehender inaktiver Nutzer, die IV-Gruppen als PTK-Mitglied angehören (mit manuell ausgefüllter Spalte für die Kammer), die Bereinigung steuern sowie Sitzungen nach Austritt dem neuen Gast zuordnen, während die bisherige PTK-Teilnahme erhalten bleibt.
+4. ~~Wenn ein IMB-Nutzer inaktiv wird~~ **Gelöst**: Automatische Verarbeitung gemäß §8.1 (Entfernung aus Gruppen, Erstellung Gast, Kammer-Feld bearbeitbar).
+5. **Historische Bereinigung**: Für bestehende inaktive Mitglieder, die weiterhin als PTK-Mitglieder in IV-Gruppen gelistet sind: Können wir genehmigte Gäste ohne den üblichen Genehmigungsprozess anlegen? Ja. Hierfür würde eine CSV bestehender inaktiver Nutzer, die IV-Gruppen als PTK-Mitglied angehören (mit manuell ausgefüllter Spalte für die Kammer), die Bereinigung steuern sowie Sitzungen nach Austritt dem neuen Gast zuordnen, während die bisherige PTK-Teilnahme erhalten bleibt.
+6. **PTK-Mitglied als Gruppenkoordinator austretend**: Was geschieht, wenn das austretende PTK-Mitglied ein Gruppenkoordinator ist? Vorschlag: Markierung als inaktiv blockieren, bis das Eigentum an offenen IV-Gruppen an einen anderen Nutzer übertragen wurde. Beim Auftraggeber bestätigen.
 
 ---
 

@@ -123,12 +123,12 @@ While the change request focuses on moving the system forward, the existing syst
 ## 5. Participant Immutability & Name Changes
 
 ### 5.1 General Rule
-Once a participant is **approved**, **no changes** may be made by Group Coordinators.
+Once a participant is **approved**, **no changes** may be made by Group Coordinators — with one exception: the **chamber** field (visiting chamber) may be updated by chamber admins and Group Coordinators when it was left blank (e.g. after automatic PTK→Visitor conversion).
 
 This applies to:
 - IMB members
 - visiting participants
-- all participant data fields
+- all other participant data fields
 
 ### 5.2 IMB Members
 - Name changes are handled exclusively via the **IMB name-change workflow**.
@@ -160,7 +160,7 @@ When an IMB member leaves the chamber and later participates as a visiting parti
   - IMB reports (points-relevant)
   - visiting participant reports (attendance-focused)
 - The chamber **cannot manually convert** a PTK-Member into a Visitor by adjusting an approved attendee.
-- Once approved, the attendee record is **frozen**; details cannot be edited.
+- Once approved, the attendee record is **frozen**; details cannot be edited (except the chamber field when left blank after automatic PTK→Visitor conversion — see §8.1).
 - If a PTK-Member has a name change, it is updated in IMB and reflected in IV because the `user_id` is the same.
 - The attendee **type** (PTK-Member vs Visitor) cannot be changed, even by chamber admins.
 - Open question to PTK-HH (client): can a visiting participant's name be changed manually?
@@ -194,13 +194,25 @@ When an IV meeting is created, points are automatically generated for each PTK m
 
 ## 8. IV Group Membership When IMB User Becomes Inactive
 
-### 8.1 Moving Forward
+### 8.1 Automatic Processing (Agreed)
 
-When an IMB user is given an exit date and set as inactive in the system, the question arises how to handle this user's membership in IV groups.
+When a PTK user is marked as inactive with an exit date (required), the system will **automatically** perform the following:
 
-**Open questions to PTK-HH (client):**
+1. **Update `valid_to`** in the `group_membership` table for all IV groups the user belongs to — set to the exit date (timestamp).
+2. **Create a new entry** in the `group_membership` table for each `group_id` the inactive user is part of: `valid_from` = today (timestamp), `valid_to` = 20 years in the future (or whatever timestamp is used for "far future").
+3. **Remove** (not mark as inactive) the user completely from all IV groups' `group_member_details`.
+4. **Create a new visiting participant** in each group's `group_member_details` with:
+   - `teilnehmer_name` — from the former PTK member
+   - `teilnehmer_ptkhh` (to be renamed to `teilnehmer_ptk`) — nein (visitor, not PTK member)
+   - `teil_kammer_other` — **blank** (to be filled by the Group Coordinator)
+   - `teilnehmer_type` — copied from the old PTK Member values
+   - `teil_appurkunde` — blank (already approved as PTK member)
+   - `status` — approved
 
-> This raises the question of how we should handle this going forward: When a PTK member receives an exit date and is set to inactive, should the system automatically remove this user from all IV groups? How do we communicate this to the group coordinators? Would it make sense to introduce a new status for IV group members (“inactive”) that informs the coordinator that the user must be removed and then re-added as a guest?
+5. **Update postmeta** for any `intervision_meeting` posts held after the user's exit date where `meta_key` = `'attended'` and `meta_value` = the inactive `user_id`: replace the `user_id` with the first and last name (used as the new `member_key` in `group_membership`).
+6. **Purge points** assigned to the user that were created **after** the exit date.
+
+The **chamber** field (`teil_kammer_other`) is the **only** field that may be changed by chamber admins and Group Coordinators for an approved participant, but only if it is blank. All other approved participant fields remain frozen.
 
 ### 8.2 Historical Cleanup: Existing Inactive Members in IV Groups
 
@@ -213,7 +225,15 @@ A utility job has been developed that exports all inactive members who belong to
 
 **Open question to PTK-HH (client):**
 
-Can we create a new approved visitor without going through the normal approval process? The visiting chamber they joined is unknown, but a column can be added to the CSV for manual update; this modified list would then drive the cleanup. This approach would allow all attended meetings **after** their exit date to be reassigned to the new visitor record, while keeping the legacy PTK attendance intact.
+For the clean up job, the visiting chamber they joined is unknown, but a column can be added to the CSV for manual update; this modified list would then drive the cleanup. This approach would allow all attended meetings **after** their exit date to be reassigned to the new visitor record, while keeping the legacy PTK attendance intact.
+
+### 8.3 PTK Member Exiting as Group Coordinator
+
+**Open question to PTK-HH (client):**
+
+What if the PTK member who is exiting is a Group Coordinator? The ability to mark a GC as inactive should only be allowed if they have already transferred their GC role to another member.
+
+**Proposed implementation (for now):** Always check for any open IV groups the user owns before allowing the chamber to mark the user as inactive. If the user owns open IV groups, block the inactivity action until ownership has been transferred.
 
 ---
 
@@ -297,8 +317,9 @@ Pagination is believed to already exist in the GK view and must be verified.
 1. May Group Coordinators print reports for **inactive visiting participants** (privacy)?
 2. Should IV meetings older than 6 years be **hidden** or **deleted**?
 3. Final confirmation that system-wide timestamp migration is handled as a **separate project** with its own rollout.
-4. When an IMB user becomes inactive (exit date set): should the system **automatically remove** them from IV groups, or introduce an **„inaktiv" status** for group members? How should this change and any required action be communicated to Group Coordinators?
-5. **Historical cleanup**: For existing inactive members still in IV groups as PTK members: can we create approved visitors without the normal approval process? This would use a CSV of existing inacive users that belong to IV groups as PTK members (with a manually filled out column for chamber) to drive cleanup, and reassign post-exit meetings to the new visitor while preserving legacy PTK attendance.
+4. ~~When an IMB user becomes inactive~~ **Resolved**: Automatic processing per §8.1 (remove from groups, create visitor, chamber field editable).
+5. **Historical cleanup**: For existing inactive members still in IV groups as PTK members: can we create approved visitors without the normal approval process? Yes. We would use a CSV of existing inactive users that belong to IV groups as PTK members (with a manually filled out column for chamber) to drive cleanup, and reassign post-exit meetings to the new visitor while preserving legacy PTK attendance.
+6. **PTK member exiting as Group Coordinator**: What if the exiting PTK member is a Group Coordinator? Proposed: block marking as inactive until they have transferred ownership of any open IV groups to another user. Confirm with client.
 
 ---
 
