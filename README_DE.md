@@ -211,6 +211,7 @@ Wenn ein PTK-Nutzer mit Austrittsdatum (Pflichtangabe) als inaktiv markiert wird
 
 5. **Postmeta aktualisieren** für alle `intervision_meeting`-Beiträge, die **nach** dem Austrittsdatum des Nutzers stattgefunden haben, wo `meta_key` = `'attended'` und `meta_value` = die inaktive `user_id`: die `user_id` durch Vor- und Nachname ersetzen (als neuer `member_key` in `group_membership`).
 6. **Punkte löschen**, die dem Nutzer zugewiesen wurden und **nach** dem Austrittsdatum erstellt wurden.
+7. **System-E-Mail versenden** an den Gruppenkoordinator jeder betroffenen IV-Gruppe mit Informationen zu den vorgenommenen Änderungen (Mitglied wurde zu Gast-Teilnehmer, Kammer-Feld auszufüllen usw.).
 
 Das **Kammer**-Feld (`teil_kammer_other`) ist das **einzige** Feld, das von Kammer-Admins und Gruppenkoordinatoren für einen genehmigten Teilnehmer geändert werden darf, aber nur wenn es leer ist. Alle übrigen genehmigten Teilnehmerfelder bleiben eingefroren.
 
