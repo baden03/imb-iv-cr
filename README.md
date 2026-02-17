@@ -211,6 +211,7 @@ When a PTK user is marked as inactive with an exit date (required), the system w
 
 5. **Update postmeta** for any `intervision_meeting` posts held after the user's exit date where `meta_key` = `'attended'` and `meta_value` = the inactive `user_id`: replace the `user_id` with the first and last name (used as the new `member_key` in `group_membership`).
 6. **Purge points** assigned to the user that were created **after** the exit date.
+7. **Send a system email** to the Group Coordinator of each affected IV group, informing them of the changes made (member transitioned to visiting participant, chamber field to be filled, etc.).
 
 The **chamber** field (`teil_kammer_other`) is the **only** field that may be changed by chamber admins and Group Coordinators for an approved participant, but only if it is blank. All other approved participant fields remain frozen.
 
