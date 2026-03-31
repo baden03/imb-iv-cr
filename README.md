@@ -272,7 +272,11 @@ To reduce chamber workload, it has been proposed to also allow:
 
 This is currently under review by the client with respect to **German privacy regulations**.
 
-**Status:** Open question – decision pending.
+### 10.1 Approval Document Retention (Visiting Participants)
+
+Any documents uploaded as proof to approve a visiting participant of an IV group (e.g. approbation proof / `Nachweis`) must be **deleted once the participant is approved**.
+
+Additionally, for an **approved** visiting participant who is a member of an IV group, the UI must **hide** this proof upload field on the front end and remove the **required** attribute (i.e. no further proof should be required/collected post-approval).
 
 ---
 
